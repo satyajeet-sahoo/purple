@@ -1,0 +1,13 @@
+import openai
+import pyttsx3
+import speech_recognition
+import time
+
+# set ur openai api key
+openai.api_key = "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"
+
+# inititaling the text-to-speech 
+engine= pyttsx3.init()
+
+
+def transcript

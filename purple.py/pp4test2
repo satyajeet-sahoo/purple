@@ -1,0 +1,192 @@
+import pyttsx3 #pip install pyttsx3
+import speech_recognition as sr #pip install speechRecognition
+import datetime
+import webbrowser
+import os
+import smtplib
+from fuzzywuzzy import fuzz 
+from bardapi import BardCookies
+import re
+import pprint
+import JarvisAI
+# import Bard
+
+
+#gbard api
+cookie_dict = {"__Secure-1PSID": "dAgKkPCtTs7TIFVysSPXfHJ2czS_6-4xwnEWFHS0S0JlbdKMxCPz4lasRJjvk047dHXu5Q.",
+                "__Secure-1PSIDTS": "sidts-CjIBNiGH7vl81erAtXuhf5jScJT4e4WCMpj2HvXJ4SaRAKeD57_L8XLNbL74tYTG5XlXzhAA",
+                "__Secure-1PSIDCC": "ACA-OxOEVOVSDqbl8RNf15XWfGbAQXTtJzqFu21WjfkbafN9EeTKUSMs83d28_ySTED4GlmfXA"
+                }
+
+bard = BardCookies(cookie_dict=cookie_dict)
+
+# client = Bard.Client(api_key="AIzaSyDI4sWIzJOx7JSB4Pbmn37jczvtZuUF5KA")
+
+
+engine = pyttsx3.init('sapi5')
+voices = engine.getProperty('voices')
+# print(voices[1].id)
+engine.setProperty('voice', voices[1].id)
+
+
+def speak(audio):
+    engine.say(audio)
+    engine.runAndWait()
+
+
+def wishMe():
+    hour = int(datetime.datetime.now().hour)
+    if hour>=0 and hour<12:
+        speak("Good Morning!")
+
+    elif hour>=12 and hour<18:
+        speak("Good Afternoon!")   
+
+    else:
+        speak("Good Evening!")  
+
+    speak(" Please tell me how may I help you")       
+
+def takeCommand():
+    #It takes microphone input from the user and returns string output
+
+    r = sr.Recognizer()
+    with sr.Microphone() as source:
+        print("Listening...")
+        r.pause_threshold = 1
+        audio = r.listen(source)
+
+    try:
+        print("Recognizing...")    
+        query = r.recognize_google(audio, language='en-in')
+        print(f"User said: {query}\n")
+
+    except Exception as e:
+        # print(e)    
+        print("Say that again please...")  
+        speak("Say that again please...")  
+        return "None"
+    return query
+
+if __name__ == "__main__":
+    wishMe()
+    while True:
+    # if 1:
+        query = takeCommand().lower()
+        
+                
+ 
+        # Logic for executing tasks based on query
+        if 'tell me' in query or 'answer me' in query or 'can u' in query :
+            speak('sure sir ')
+            speak('Searching your result...')
+            results = bard.get_answer(query)
+            results = re.sub('\[\^\d+\^\]', '', results)
+            print(results)
+            speak(results)
+
+        elif "open" in query and "website|whatsapp" not in query: 
+            words = query.split()                                       # splits the query inzx to a list of individual words
+            website_index = words.index("open") + 1                     # finds the index of word open in list and add 1 to get next index
+            website = words[website_index]
+            speak(f"Opening {website} sir")
+            url = f"https://{website}.com"
+            webbrowser.open(url)
+
+        
+        elif "play music" in query.lower() or 'play song' in query.lower():
+            speak(" sure sir , playing Music")
+            
+            # todo: Add your music folder path here
+            
+            musicFolder = r"C:\\Users\\ADMIN\\Music"                 # Specified path for music folder
+            musicFiles = []
+            for file in os.listdir(musicFolder):                                                  # os.listdir retrives all files from the specified directory
+                if file.endswith(".mp3"):
+                    musicFiles.append(file)
+            
+            print("Music files:")
+            for i, musicFile in enumerate(musicFiles, start=1):
+                print(f"{i}. {musicFile}")
+            
+            r = sr.Recognizer()
+            with sr.Microphone() as source:
+                speak("Please say the name of the music file you want to play.")
+                audio = r.listen(source)
+            
+            try:
+                query = r.recognize_google(audio, language="en-in")
+                query = query.lower()
+                best_match_ratio = 0
+                selectedFile = None
+                for musicFile in musicFiles:
+                    match_ratio = fuzz.ratio(query, musicFile.lower())                            # fuzz.ratio is used to calculate the similarity between two strings
+                    if match_ratio > best_match_ratio:
+                        best_match_ratio = match_ratio
+                        selectedFile = musicFile
+                
+                if selectedFile is not None:
+                    speak(f"Playing {selectedFile}")
+                    musicPath = os.path.join(musicFolder, selectedFile)                           # this statement joins the music folder path and selected file path
+                    os.startfile(musicPath)
+                else:
+                    speak("Music file not found.")
+            except sr.UnknownValueError:
+                speak("Sorry, I could not understand your command.")
+            except sr.RequestError:
+                speak("Sorry, I am having trouble accessing the speech recognition service.")
+        
+   
+
+        elif 'the time' in query:
+            strTime = datetime.datetime.now().strftime("%H:%M:%S")    
+            speak(f"Sir, the time is {strTime}")
+
+
+        elif 'VS code destop' in query:
+            codePath ="C:\\Users\\ADMIN\\OneDrive\\Desktop\\Visual Studio Code.lnk"
+            os.startfile(codePath)
+
+        elif ' MS word destop'.lower or 'MS word' in query:
+            codePath= "C:\\Users\\ADMIN\\OneDrive\\Desktop\\Word 2016.lnk"
+            speak('opening microsoft word')
+            os.startfile(codePath)
+
+        elif 'MS PPT destop'.lower or "PowerPoint" in query:
+            codePath= "C:\\ProgramData\\Microsoft\\Windows\\Start Menu\\Programs\\PowerPoint 2016.lnk"
+            os.startfile(codePath)   
+
+        elif "Quit".lower() in query.lower():
+            exit()
+        
+        elif "stop" in query:
+            break
+
+        elif ' you do' in query:
+                    li_commands = {
+                        "open websites": "Example: 'open youtube.com",
+                        "time": "Example: 'what time it is?'",
+                        "date": "Example: 'what date it is?'",
+                        "launch applications": "Example: 'launch chrome'",
+                        "tell me": "Example: 'tell me about India'",
+                        "weather": "Example: 'what weather/temperature in Mumbai?'",
+                        "news": "Example: 'news for today' ",
+                    }
+                    ans = """I can do lots of things, for example you can ask me time, date, weather in your city,
+                    I can open websites for you, launch application and more. See the list of commands-"""
+                    print(ans)
+                    pprint.pprint(li_commands)
+                    speak(ans)
+      
+        else :
+            result = bard.get_answer(query)
+            print(result)
+            speak(result)
+           
+
+
+
+
+          
+
+        

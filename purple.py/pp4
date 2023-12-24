@@ -1,0 +1,156 @@
+import pyttsx3 #pip install pyttsx3
+import speech_recognition as sr #pip install speechRecognition
+import datetime
+import wikipedia #pip install wikipedia
+import webbrowser
+import os
+import smtplib
+from fuzzywuzzy import fuzz 
+
+engine = pyttsx3.init('sapi5')
+voices = engine.getProperty('voices')
+# print(voices[1].id)
+engine.setProperty('voice', voices[1].id)
+
+
+def speak(audio):
+    engine.say(audio)
+    engine.runAndWait()
+
+
+def wishMe():
+    hour = int(datetime.datetime.now().hour)
+    if hour>=0 and hour<12:
+        speak("Good Morning!")
+
+    elif hour>=12 and hour<18:
+        speak("Good Afternoon!")   
+
+    else:
+        speak("Good Evening!")  
+
+    speak(" Please tell me how may I assist you")       
+
+def takeCommand():
+    #It takes microphone input from the user and returns string output
+
+    r = sr.Recognizer()
+    with sr.Microphone() as source:
+        print("Listening...")
+        r.pause_threshold = 1
+        audio = r.listen(source)
+
+    try:
+        print("Recognizing...")    
+        query = r.recognize_google(audio, language='en-in')
+        print(f"User said: {query}\n")
+
+    except Exception as e:
+        # print(e)    
+        print("Say that again please...")  
+        return "None"
+    return query
+
+def sendEmail(to, content):   # send email
+    server = smtplib.SMTP('smtp.gmail.com', 587)
+    server.ehlo()
+    server.starttls()
+    server.login('youremail@gmail.com', 'your-password')
+    server.sendmail('youremail@gmail.com', to, content)
+    server.close()
+
+if __name__ == "__main__":
+    wishMe()
+    while True:
+    # if 1:
+        query = takeCommand().lower()
+
+        # Logic for executing tasks based on query
+        if 'wikipedia' in query:
+            speak('Searching Wikipedia...')
+            query = query.replace("wikipedia", "")
+            results = wikipedia.summary(query, sentences=2)
+            speak("According to Wikipedia")
+            print(results)
+            speak(results)
+
+        if "open" in query and "website" not in query: 
+            words = query.split()                                       # splits the query inzx to a list of individual words
+            website_index = words.index("open") + 1                     # finds the index of word open in list and add 1 to get next index
+            website = words[website_index]
+            speak(f"Opening {website} sir")
+            url = f"https://{website}.com"
+            webbrowser.open(url)
+
+
+        elif "play music" in query.lower():
+            speak("playing Music")
+            
+            # todo: Add your music folder path here
+            
+            musicFolder = r"C:\\Users\\ADMIN\\Music"                 # Specified path for music folder
+            musicFiles = []
+            for file in os.listdir(musicFolder):                                                  # os.listdir retrives all files from the specified directory
+                if file.endswith(".mp3"):
+                    musicFiles.append(file)
+            
+            print("Music files:")
+            for i, musicFile in enumerate(musicFiles, start=1):
+                print(f"{i}. {musicFile}")
+            
+            r = sr.Recognizer()
+            with sr.Microphone() as source:
+                speak("Please say the name of the music file you want to play.")
+                audio = r.listen(source)
+            
+            try:
+                query = r.recognize_google(audio, language="en-in")
+                query = query.lower()
+                best_match_ratio = 0
+                selectedFile = None
+                for musicFile in musicFiles:
+                    match_ratio = fuzz.ratio(query, musicFile.lower())                            # fuzz.ratio is used to calculate the similarity between two strings
+                    if match_ratio > best_match_ratio:
+                        best_match_ratio = match_ratio
+                        selectedFile = musicFile
+                
+                if selectedFile is not None:
+                    speak(f"Playing {selectedFile}")
+                    musicPath = os.path.join(musicFolder, selectedFile)                           # this statement joins the music folder path and selected file path
+                    os.startfile(musicPath)
+                else:
+                    speak("Music file not found.")
+            except sr.UnknownValueError:
+                speak("Sorry, I could not understand your command.")
+            except sr.RequestError:
+                speak("Sorry, I am having trouble accessing the speech recognition service.")
+
+        elif 'play movies' in query:
+            speak("Playing movies sir")
+
+
+        elif 'the time' in query:
+            strTime = datetime.datetime.now().strftime("%H:%M:%S")    
+            speak(f"Sir, the time is {strTime}")
+
+
+        elif 'open code' in query:
+            codePath ="C:\\Users\\ADMIN\\OneDrive\\Desktop\\Visual Studio Code.lnk"
+            os.startfile(codePath)
+          
+            
+        elif "Quit".lower() in query.lower():
+            exit()
+
+       
+
+        # elif 'email to harry' in query:
+        #     try:
+        #         speak("What should I say?")
+        #         content = takeCommand()
+        #         to = "harryyourEmail@gmail.com"    
+        #         sendEmail(to, content)
+        #         speak("Email has been sent!")
+        #     except Exception as e:
+        #         print(e)
+        #         speak("Sorry my friend harry bhai. I am not able to send this email")    

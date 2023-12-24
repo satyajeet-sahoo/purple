@@ -1,0 +1,43 @@
+# ... (previous code)
+
+import openai  # Make sure to install the 'openai' library using 'pip install openai'
+
+openai.api_key = "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"  # Replace with your OpenAI API key
+
+def search_with_chatgpt(query):
+    prompt = f"I want to know about {query}"
+    response = openai.Completion.create(
+        engine="davinci-codex",
+        prompt=prompt,
+        temperature=0.7,
+        max_tokens=150,
+        n=1,
+    )
+    result = response.choices[0].text.strip()
+    print(result)
+    speak(result)
+
+if __name__ == "__main__":
+    # ... (previous code)
+
+    while True:
+        query = take_command()
+
+        command_functions = {
+            'open website': open_website,
+            'play music': play_music,
+            'the time': get_time,
+            'launch application': launch_application,
+            'weather': get_weather,
+            'news': get_news,
+            'tell me about': get_wikipedia_info,
+            'search': search_with_chatgpt,
+            # Add more commands and functions here
+        }
+
+        for command, function in command_functions.items():
+            if command in query:
+                function(query)
+
+        if "stop" in query:
+            break
